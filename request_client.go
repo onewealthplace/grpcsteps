@@ -3,11 +3,13 @@ package grpcsteps
 import (
 	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
+	"google.golang.org/protobuf/proto"
 	"reflect"
 	"sync"
 	"time"
 
-	"github.com/swaggest/assertjson"
+	"github.com/onewealthplace/bsonpb/v2"
 	"go.nhat.io/grpcmock"
 	"go.nhat.io/grpcmock/invoker"
 	"go.nhat.io/grpcmock/must"
@@ -38,7 +40,11 @@ func (r *clientRequestInvoker) Do() ([]byte, error) {
 			return
 		}
 
-		payload, err := assertjson.MarshalIndentCompact(r.responseRaw, "", "  ", 80)
+		var obj, err = bsonpb.MarshalOptions{}.Marshal(r.responseRaw.(proto.Message))
+		must.NotFail(err) // this should not happen
+		payload, err := bson.MarshalExtJSON(obj, true, false)
+
+		//payload, err := assertjson.MarshalIndentCompact(&obj, "", "  ", 80)
 		must.NotFail(err) // this should not happen
 
 		r.response = payload

@@ -1,8 +1,10 @@
 package grpcsteps
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/onewealthplace/bsonpb/v2"
+	"go.mongodb.org/mongo-driver/bson"
+	"google.golang.org/protobuf/proto"
 	"reflect"
 	"regexp"
 	"strings"
@@ -33,8 +35,30 @@ func unmarshal(in interface{}, isSlice bool, data *string) (interface{}, error) 
 		return reflect.Zero(result.Type()).Interface(), nil
 	}
 
-	if err := json.Unmarshal([]byte(*data), result.Interface()); err != nil {
-		return nil, err
+	if isSlice {
+		var doc bson.A
+		if err := bson.UnmarshalExtJSON([]byte(*data), true, &doc); err != nil {
+			return nil, err
+		}
+
+		err := bsonpb.UnmarshalOptions{
+			DiscardUnknown: true,
+		}.Unmarshal(doc, result.Interface().(proto.Message))
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		var doc bson.D
+		if err := bson.UnmarshalExtJSON([]byte(*data), true, &doc); err != nil {
+			return nil, err
+		}
+
+		err := bsonpb.UnmarshalOptions{
+			DiscardUnknown: true,
+		}.Unmarshal(doc, result.Interface().(proto.Message))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if isSlice {

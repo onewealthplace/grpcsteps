@@ -24,8 +24,8 @@ type ServiceOption func(s *Service)
 
 // Client is a grpc client for godog.
 type Client struct {
-	services map[string]*Service
-
+	services          map[string]*Service
+	servicePrefix     string
 	defaultSvcOptions []ServiceOption
 }
 
@@ -55,7 +55,11 @@ func (c *Client) registerService(id string, svc interface{}, opts ...ServiceOpti
 			o(svc)
 		}
 
-		c.services[svc.FullName()] = svc
+		fullName := svc.FullName()
+		if c.servicePrefix != "" && len(fullName) > len(c.servicePrefix) && fullName[:len(c.servicePrefix)] == c.servicePrefix {
+			fullName = fullName[len(c.servicePrefix):]
+		}
+		c.services[fullName] = svc
 	}
 }
 
@@ -68,6 +72,11 @@ func (c *Client) RegisterContext(sc *godog.ScenarioContext) {
 	sc.Step(`^I should have(?: a)? (?:gRPC|GRPC|grpc) response with payload:?$`, c.iShouldHaveResponseWithPayloadFromDocString)
 	sc.Step(`^I should have(?: a)? (?:gRPC|GRPC|grpc) response with payload from file "([^"]+)"$`, c.iShouldHaveResponseWithPayloadFromFile)
 	sc.Step(`^I should have(?: a)? (?:gRPC|GRPC|grpc) response with payload from file:?$`, c.iShouldHaveResponseWithPayloadFromFileDocString)
+
+	sc.Step(`^I should have(?: a)? (?:gRPC|GRPC|grpc) response match payload:?$`, c.iShouldHaveResponseMatchPayloadFromDocString)
+	sc.Step(`^I should have(?: a)? (?:gRPC|GRPC|grpc) response match payload from file "([^"]+)"$`, c.iShouldHaveResponseMatchPayloadFromFile)
+	sc.Step(`^I should have(?: a)? (?:gRPC|GRPC|grpc) response match payload from file:?$`, c.iShouldHaveResponseMatchPayloadFromFileDocString)
+
 	sc.Step(`^I should have(?: a)? (?:gRPC|GRPC|grpc) response with code "([^"]*)"$`, c.iShouldHaveResponseWithCode)
 	sc.Step(`^I should have(?: a)? (?:gRPC|GRPC|grpc) response with error (?:message )?"([^"]*)"$`, c.iShouldHaveResponseWithErrorMessage)
 	sc.Step(`^I should have(?: a)? (?:gRPC|GRPC|grpc) response with code "([^"]*)" and error (?:message )?"([^"]*)"$`, c.iShouldHaveResponseWithCodeAndErrorMessage)
@@ -109,7 +118,7 @@ func (c *Client) iRequestWithPayloadFromFileDocString(ctx context.Context, metho
 }
 
 func (c *Client) iShouldHaveResponseWithPayload(ctx context.Context, response string) error {
-	return assertServerResponsePayload(clientRequestFromContext(ctx), response)
+	return assertServerResponsePayloadEqual(clientRequestFromContext(ctx), response)
 }
 
 func (c *Client) iShouldHaveResponseWithPayloadFromDocString(ctx context.Context, response *godog.DocString) error {
@@ -127,6 +136,27 @@ func (c *Client) iShouldHaveResponseWithPayloadFromFile(ctx context.Context, pat
 
 func (c *Client) iShouldHaveResponseWithPayloadFromFileDocString(ctx context.Context, path *godog.DocString) error {
 	return c.iShouldHaveResponseWithPayloadFromFile(ctx, path.Content)
+}
+
+func (c *Client) iShouldHaveResponseMatchPayload(ctx context.Context, response string) error {
+	return assertServerResponsePayloadMatch(clientRequestFromContext(ctx), response)
+}
+
+func (c *Client) iShouldHaveResponseMatchPayloadFromDocString(ctx context.Context, response *godog.DocString) error {
+	return c.iShouldHaveResponseMatchPayload(ctx, response.Content)
+}
+
+func (c *Client) iShouldHaveResponseMatchPayloadFromFile(ctx context.Context, path string) error {
+	payload, err := os.ReadFile(path) // nolint: gosec
+	if err != nil {
+		return err
+	}
+
+	return c.iShouldHaveResponseMatchPayload(ctx, string(payload))
+}
+
+func (c *Client) iShouldHaveResponseMatchPayloadFromFileDocString(ctx context.Context, path *godog.DocString) error {
+	return c.iShouldHaveResponseMatchPayloadFromFile(ctx, path.Content)
 }
 
 func (c *Client) iShouldHaveResponseWithCode(ctx context.Context, codeValue string) error {
@@ -226,5 +256,11 @@ func WithDialOption(o grpc.DialOption) ServiceOption {
 func WithDialOptions(opts ...grpc.DialOption) ServiceOption {
 	return func(s *Service) {
 		s.DialOptions = opts
+	}
+}
+
+func WithServicePrefix(prefix string) ClientOption {
+	return func(c *Client) {
+		c.servicePrefix = prefix
 	}
 }

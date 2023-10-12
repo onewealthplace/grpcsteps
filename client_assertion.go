@@ -8,13 +8,22 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func assertServerResponsePayload(req clientRequest, expected string) error {
+func assertServerResponsePayloadEqual(req clientRequest, expected string) error {
 	actual, err := req.Do()
 	if err != nil {
 		return fmt.Errorf("an error occurred while send grpc request: %w", err)
 	}
 
 	return assertjson.FailNotEqual([]byte(expected), actual)
+}
+
+func assertServerResponsePayloadMatch(req clientRequest, expected string) error {
+	actual, err := req.Do()
+	if err != nil {
+		return fmt.Errorf("an error occurred while send grpc request: %w", err)
+	}
+
+	return assertjson.FailMismatch([]byte(expected), actual)
 }
 
 func assertServerResponseErrorCode(req clientRequest, expected codes.Code) error {

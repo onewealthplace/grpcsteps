@@ -61,7 +61,7 @@ func TestAssertServerResponsePayload(t *testing.T) {
 		t.Run(tc.scenario, func(t *testing.T) {
 			t.Parallel()
 
-			err := assertServerResponsePayload(tc.request, tc.expected)
+			err := assertServerResponsePayloadEqual(tc.request, tc.expected)
 
 			if tc.expectedError == "" {
 				assert.NoError(t, err)
