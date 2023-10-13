@@ -2,8 +2,11 @@ package grpcsteps
 
 import (
 	"context"
+	"github.com/godogx/vars"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/cucumber/godog"
 	xreflect "go.nhat.io/grpcmock/reflect"
@@ -91,7 +94,15 @@ func (c *Client) iRequestWithPayload(ctx context.Context, method string, data st
 	if !ok {
 		return ctx, ErrInvalidGRPCMethod
 	}
-
+	currentVars := vars.FromContext(ctx)
+	for k, v := range currentVars {
+		switch vv := v.(type) {
+		case string:
+			data = strings.ReplaceAll(data, k, vv)
+		case int:
+			data = strings.ReplaceAll(data, k, strconv.Itoa(vv))
+		}
+	}
 	payload, err := toPayload(svc.MethodType, svc.Input, &data)
 	if err != nil {
 		return ctx, err

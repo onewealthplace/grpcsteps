@@ -3,7 +3,9 @@ package grpcsteps
 import (
 	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
 
+	"github.com/godogx/vars"
 	"github.com/swaggest/assertjson"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,7 +16,9 @@ func assertServerResponsePayloadEqual(ctx context.Context, req clientRequest, ex
 	if err != nil {
 		return fmt.Errorf("an error occurred while send grpc request: %w", err)
 	}
-
+	var doc bson.M
+	_ = bson.UnmarshalExtJSON([]byte(actual), true, &doc)
+	vars.ToContext(ctx, "$response", doc)
 	return assertjson.FailNotEqual([]byte(expected), actual)
 }
 
@@ -23,7 +27,9 @@ func assertServerResponsePayloadMatch(ctx context.Context, req clientRequest, ex
 	if err != nil {
 		return fmt.Errorf("an error occurred while send grpc request: %w", err)
 	}
-
+	var doc bson.M
+	_ = bson.UnmarshalExtJSON([]byte(actual), true, &doc)
+	vars.ToContext(ctx, "$response", doc)
 	return assertjson.FailMismatch([]byte(expected), actual)
 }
 
