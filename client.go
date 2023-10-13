@@ -118,7 +118,7 @@ func (c *Client) iRequestWithPayloadFromFileDocString(ctx context.Context, metho
 }
 
 func (c *Client) iShouldHaveResponseWithPayload(ctx context.Context, response string) error {
-	return assertServerResponsePayloadEqual(clientRequestFromContext(ctx), response)
+	return assertServerResponsePayloadEqual(ctx, clientRequestFromContext(ctx), response)
 }
 
 func (c *Client) iShouldHaveResponseWithPayloadFromDocString(ctx context.Context, response *godog.DocString) error {
@@ -139,7 +139,7 @@ func (c *Client) iShouldHaveResponseWithPayloadFromFileDocString(ctx context.Con
 }
 
 func (c *Client) iShouldHaveResponseMatchPayload(ctx context.Context, response string) error {
-	return assertServerResponsePayloadMatch(clientRequestFromContext(ctx), response)
+	return assertServerResponsePayloadMatch(ctx, clientRequestFromContext(ctx), response)
 }
 
 func (c *Client) iShouldHaveResponseMatchPayloadFromDocString(ctx context.Context, response *godog.DocString) error {
@@ -165,11 +165,11 @@ func (c *Client) iShouldHaveResponseWithCode(ctx context.Context, codeValue stri
 		return err
 	}
 
-	return assertServerResponseErrorCode(clientRequestFromContext(ctx), code)
+	return assertServerResponseErrorCode(ctx, clientRequestFromContext(ctx), code)
 }
 
 func (c *Client) iShouldHaveResponseWithErrorMessage(ctx context.Context, err string) error {
-	return assertServerResponseErrorMessage(clientRequestFromContext(ctx), err)
+	return assertServerResponseErrorMessage(ctx, clientRequestFromContext(ctx), err)
 }
 
 func (c *Client) iShouldHaveResponseWithCodeAndErrorMessage(ctx context.Context, codeValue, err string) error {

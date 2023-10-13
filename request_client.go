@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 	"reflect"
 	"sync"
@@ -21,7 +22,7 @@ import (
 const ErrNoClientRequestInContext err = "no client request in context"
 
 type clientRequest interface {
-	Do() ([]byte, error)
+	Do(ctx context.Context) ([]byte, error)
 }
 
 type clientRequestInvoker struct {
@@ -33,9 +34,9 @@ type clientRequestInvoker struct {
 	once sync.Once
 }
 
-func (r *clientRequestInvoker) Do() ([]byte, error) {
+func (r *clientRequestInvoker) Do(ctx context.Context) ([]byte, error) {
 	r.once.Do(func() {
-		r.responseErr = r.invoker.Invoke(context.Background())
+		r.responseErr = r.invoker.Invoke(metadata.NewOutgoingContext(context.Background(), mdFromContext(ctx)))
 		if r.responseErr != nil {
 			return
 		}
@@ -100,7 +101,7 @@ func clientRequestInvokerOptions(svc *Service, payload interface{}, out interfac
 
 type missingClientRequest struct{}
 
-func (m missingClientRequest) Do() ([]byte, error) {
+func (m missingClientRequest) Do(ctx context.Context) ([]byte, error) {
 	return nil, missingClientRequestPlannerErr()
 }
 
@@ -108,6 +109,15 @@ func clientRequestFromContext(ctx context.Context) clientRequest {
 	r, ok := ctx.Value(requestCtxKey{}).(clientRequest)
 	if !ok {
 		return missingClientRequest{}
+	}
+
+	return r
+}
+
+func mdFromContext(ctx context.Context) metadata.MD {
+	r, ok := metadata.FromOutgoingContext(ctx)
+	if !ok {
+		return metadata.MD{}
 	}
 
 	return r

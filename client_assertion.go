@@ -1,6 +1,7 @@
 package grpcsteps
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/swaggest/assertjson"
@@ -8,8 +9,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func assertServerResponsePayloadEqual(req clientRequest, expected string) error {
-	actual, err := req.Do()
+func assertServerResponsePayloadEqual(ctx context.Context, req clientRequest, expected string) error {
+	actual, err := req.Do(ctx)
 	if err != nil {
 		return fmt.Errorf("an error occurred while send grpc request: %w", err)
 	}
@@ -17,8 +18,8 @@ func assertServerResponsePayloadEqual(req clientRequest, expected string) error 
 	return assertjson.FailNotEqual([]byte(expected), actual)
 }
 
-func assertServerResponsePayloadMatch(req clientRequest, expected string) error {
-	actual, err := req.Do()
+func assertServerResponsePayloadMatch(ctx context.Context, req clientRequest, expected string) error {
+	actual, err := req.Do(ctx)
 	if err != nil {
 		return fmt.Errorf("an error occurred while send grpc request: %w", err)
 	}
@@ -26,8 +27,8 @@ func assertServerResponsePayloadMatch(req clientRequest, expected string) error 
 	return assertjson.FailMismatch([]byte(expected), actual)
 }
 
-func assertServerResponseErrorCode(req clientRequest, expected codes.Code) error {
-	_, err := req.Do()
+func assertServerResponseErrorCode(ctx context.Context, req clientRequest, expected codes.Code) error {
+	_, err := req.Do(ctx)
 	if err == nil {
 		if expected != codes.OK {
 			return fmt.Errorf("got no error, want %q", expected) // nolint: goerr113
@@ -45,8 +46,8 @@ func assertServerResponseErrorCode(req clientRequest, expected codes.Code) error
 	return nil
 }
 
-func assertServerResponseErrorMessage(req clientRequest, expected string) error {
-	_, err := req.Do()
+func assertServerResponseErrorMessage(ctx context.Context, req clientRequest, expected string) error {
+	_, err := req.Do(ctx)
 	if err == nil {
 		if expected != "" {
 			return fmt.Errorf("got no error, want %q", expected) // nolint: goerr113
