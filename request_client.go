@@ -58,7 +58,7 @@ func newClientRequestInvoker(svc *Service, payload interface{}) *clientRequestIn
 	out := newServerOutput(svc.MethodType, svc.Output)
 	i := invoker.New(svc.Method, clientRequestInvokerOptions(svc, payload, out)...)
 
-	i.WithTimeout(time.Second)
+	i.WithTimeout(time.Minute)
 
 	return &clientRequestInvoker{
 		invoker:     i,
